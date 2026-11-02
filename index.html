@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="te">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>వంటకం — Recipe Taker</title>
+<style>
+  :root { --accent:#c0532f; --bg:#faf6ef; --card:#fff; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system, "Noto Sans Telugu", sans-serif; background:var(--bg); margin:0; padding:24px; max-width:860px; margin-inline:auto; color:#2b2118; }
+  h1 { font-size:1.5rem; margin:0 0 4px; }
+  .sub { color:#8a7b6c; margin:0 0 20px; font-size:.9rem; }
+  textarea { width:100%; min-height:130px; font-size:1.1rem; padding:12px; border:1px solid #ddd0bd; border-radius:10px; background:var(--card); font-family:inherit; }
+  .row { display:flex; gap:10px; margin:12px 0 28px; align-items:center; flex-wrap:wrap; }
+  button { border:0; border-radius:10px; padding:12px 20px; font-size:1rem; cursor:pointer; font-family:inherit; }
+  #mic { background:#2b2118; color:#fff; }
+  #mic.rec { background:#c22; animation:pulse 1.2s infinite; }
+  @keyframes pulse { 50% { opacity:.6; } }
+  #extract { background:var(--accent); color:#fff; }
+  #save { background:#3a7d44; color:#fff; display:none; }
+  #status { color:#8a7b6c; font-size:.9rem; }
+  h2 { margin:24px 0 4px; }
+  h2 small { color:#8a7b6c; font-weight:normal; font-size:.65em; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin:14px 0; }
+  .card { background:var(--card); border-radius:12px; overflow:hidden; border:1px solid #eee2d0; text-align:center; }
+  .card img, .card .ph { width:100%; height:110px; object-fit:cover; display:block; }
+  .card .ph { display:flex; align-items:center; justify-content:center; font-size:2.2rem; background:#f1e8da; height:110px; }
+  .card .n { padding:8px 6px; font-size:.95rem; }
+  .card .n b { display:block; }
+  .card .q { color:var(--accent); font-size:.85rem; }
+  ol li { margin:6px 0; font-size:1.05rem; }
+  .saved { background:var(--card); border:1px solid #eee2d0; border-radius:10px; padding:10px 14px; margin:8px 0; cursor:pointer; display:flex; justify-content:space-between; }
+  .saved span.del { color:#c22; }
+</style>
+</head>
+<body>
+<h1>వంటకం చెప్పండి 🎙️</h1>
+<p class="sub">Dictate a recipe in Telugu (or type it), then Extract — Claude pulls out the ingredients with photos.</p>
+
+<textarea id="text" placeholder="ఉదా: టమాటా పప్పు. కందిపప్పు ఒక కప్పు, టమాటాలు రెండు, పచ్చిమిర్చి మూడు..."></textarea>
+<div class="row">
+  <button id="mic">🎙️ మాట్లాడండి</button>
+  <button id="extract">Extract ✨</button>
+  <button id="save">💾 Save</button>
+  <span id="status"></span>
+</div>
+
+<div id="result"></div>
+
+<h2 id="savedHead" style="display:none">📒 Saved recipes</h2>
+<div id="savedList"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let current = null;
+
+// --- Telugu dictation (browser-native) ---
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, recording = false;
+if (SR) {
+  rec = new SR();
+  rec.lang = "te-IN";
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.onstart = () => { $("status").textContent = "🔴 వినడం జరుగుతోంది… speak now"; };
+  rec.onresult = (e) => {
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) $("text").value += e.results[i][0].transcript + " ";
+      else interim += e.results[i][0].transcript;
+    }
+    $("status").textContent = interim ? "… " + interim : "🔴 వినడం జరుగుతోంది…";
+  };
+  rec.onerror = (e) => {
+    const msgs = {
+      "not-allowed": "Mic blocked — allow microphone access for this site (open in regular Chrome if the embedded browser blocks it).",
+      "audio-capture": "No microphone found.",
+      "no-speech": "Didn't hear anything — try again closer to the mic.",
+      "language-not-supported": "Telugu (te-IN) not supported in this browser — use Chrome.",
+      "network": "Speech service unreachable — Chrome's recognition needs internet.",
+    };
+    $("status").textContent = "❌ " + (msgs[e.error] || "Speech error: " + e.error);
+    if (e.error === "not-allowed" || e.error === "language-not-supported") {
+      recording = false;
+      $("mic").classList.remove("rec");
+      $("mic").textContent = "🎙️ మాట్లాడండి";
+    }
+  };
+  rec.onend = () => { if (recording) rec.start(); else if (!$("status").textContent.startsWith("❌")) $("status").textContent = ""; };
+} else {
+  $("mic").disabled = true;
+  $("status").textContent = "Speech recognition needs Chrome/Safari — type instead.";
+}
+$("mic").onclick = () => {
+  recording = !recording;
+  $("mic").classList.toggle("rec", recording);
+  $("mic").textContent = recording ? "⏹ ఆపండి" : "🎙️ మాట్లాడండి";
+  recording ? rec.start() : rec.stop();
+};
+
+// --- Extract via local claude ---
+$("extract").onclick = async () => {
+  const text = $("text").value.trim();
+  if (!text) return;
+  if (recording) $("mic").click();
+  $("status").textContent = "Claude ఆలోచిస్తోంది…";
+  $("extract").disabled = true;
+  try {
+    const r = await fetch("/extract", { method: "POST", body: JSON.stringify({ text }) });
+    const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    current = j;
+    await render(j, $("result"));
+    $("save").style.display = "inline-block";
+    $("status").textContent = "";
+  } catch (e) {
+    $("status").textContent = "❌ " + e.message;
+  } finally {
+    $("extract").disabled = false;
+  }
+};
+
+// --- Ingredient photos from Wikipedia thumbnails (free, CORS-open) ---
+async function photo(title) {
+  try {
+    const r = await fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title));
+    if (!r.ok) return null;
+    return (await r.json()).thumbnail?.source || null;
+  } catch { return null; }
+}
+
+async function render(recipe, el) {
+  el.innerHTML = `<h2>${recipe.dish.telugu} <small>${recipe.dish.english}</small></h2>
+    <div class="grid"></div>
+    <h2>తయారీ విధానం</h2><ol>${(recipe.steps || []).map(s => `<li>${s}</li>`).join("")}</ol>`;
+  const grid = el.querySelector(".grid");
+  await Promise.all((recipe.ingredients || []).map(async (ing) => {
+    ing.img ??= await photo(ing.wiki || ing.english);
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `${ing.img ? `<img src="${ing.img}" alt="${ing.english}">` : `<div class="ph">🥘</div>`}
+      <div class="n"><b>${ing.telugu}</b>${ing.english}<div class="q">${ing.quantity || ""}</div></div>`;
+    grid.appendChild(card);
+  }));
+}
+
+// --- Save to localStorage ---
+const load = () => JSON.parse(localStorage.recipes || "[]");
+$("save").onclick = () => {
+  if (!current) return;
+  localStorage.recipes = JSON.stringify([current, ...load()]);
+  $("save").style.display = "none";
+  showSaved();
+};
+function showSaved() {
+  const all = load();
+  $("savedHead").style.display = all.length ? "block" : "none";
+  $("savedList").innerHTML = "";
+  all.forEach((r, i) => {
+    const d = document.createElement("div");
+    d.className = "saved";
+    d.innerHTML = `<span>${r.dish.telugu} — ${r.dish.english}</span><span class="del">✕</span>`;
+    d.onclick = (e) => {
+      if (e.target.classList.contains("del")) {
+        const rest = load(); rest.splice(i, 1);
+        localStorage.recipes = JSON.stringify(rest);
+        showSaved();
+      } else render(r, $("result"));
+    };
+    $("savedList").appendChild(d);
+  });
+}
+showSaved();
+</script>
+</body>
+</html>

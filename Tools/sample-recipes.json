@@ -1,0 +1,41 @@
+{
+  "dictation": "టమాటా పప్పు. కందిపప్పు ఒక కప్పు, టమాటాలు మూడు, పచ్చిమిర్చి నాలుగు, పసుపు చిటికెడు, ఉప్పు తగినంత. తాలింపుకి ఆవాలు, వెల్లుల్లి, కరివేపాకు.",
+  "recipes": [
+    {
+      "dish": { "telugu": "టమాటా పప్పు", "english": "Tomato Dal" },
+      "ingredients": [
+        { "telugu": "కందిపప్పు", "english": "Toor dal", "quantity": "1 కప్పు", "wiki": "Pigeon pea" },
+        { "telugu": "టమాటాలు", "english": "Tomatoes", "quantity": "3", "wiki": "Tomato" },
+        { "telugu": "పచ్చిమిర్చి", "english": "Green chillies", "quantity": "4", "wiki": "Chili pepper" },
+        { "telugu": "పసుపు", "english": "Turmeric", "quantity": "చిటికెడు", "wiki": "Turmeric" },
+        { "telugu": "ఆవాలు", "english": "Mustard seeds", "quantity": "", "wiki": "Mustard seed" },
+        { "telugu": "వెల్లుల్లి", "english": "Garlic", "quantity": "", "wiki": "Garlic" },
+        { "telugu": "కరివేపాకు", "english": "Curry leaves", "quantity": "", "wiki": "Curry tree" },
+        { "telugu": "ఉప్పు", "english": "Salt", "quantity": "తగినంత", "wiki": "Salt" }
+      ],
+      "steps": [
+        "కందిపప్పును కడిగి, పసుపు వేసి మెత్తగా ఉడికించండి.",
+        "టమాటాలు, పచ్చిమిర్చి వేసి మరో ఐదు నిమిషాలు ఉడికించండి.",
+        "ఉప్పు వేసి బాగా కలపండి.",
+        "నూనెలో ఆవాలు, వెల్లుల్లి, కరివేపాకు వేయించి పప్పులో తాలింపు పెట్టండి."
+      ]
+    },
+    {
+      "dish": { "telugu": "పెసరట్టు", "english": "Pesarattu" },
+      "ingredients": [
+        { "telugu": "పెసలు", "english": "Green gram", "quantity": "2 కప్పులు", "wiki": "Mung bean" },
+        { "telugu": "అల్లం", "english": "Ginger", "quantity": "చిన్న ముక్క", "wiki": "Ginger" },
+        { "telugu": "పచ్చిమిర్చి", "english": "Green chillies", "quantity": "3", "wiki": "Chili pepper" },
+        { "telugu": "జీలకర్ర", "english": "Cumin", "quantity": "1 చెంచా", "wiki": "Cumin" },
+        { "telugu": "ఉల్లిపాయ", "english": "Onion", "quantity": "1", "wiki": "Onion" },
+        { "telugu": "ఉప్పు", "english": "Salt", "quantity": "తగినంత", "wiki": "Salt" }
+      ],
+      "steps": [
+        "పెసలను రాత్రంతా నానబెట్టండి.",
+        "అల్లం, పచ్చిమిర్చి, జీలకర్ర, ఉప్పుతో కలిపి మెత్తగా రుబ్బండి.",
+        "వేడి పెనం మీద పిండిని పల్చగా పోసి, ఉల్లిపాయ ముక్కలు చల్లండి.",
+        "రెండు వైపులా కాల్చి వేడిగా వడ్డించండి."
+      ]
+    }
+  ]
+}
